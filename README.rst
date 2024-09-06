@@ -23,7 +23,7 @@ percentile, respectively)
 How to use
 ~~~~~~~~~~
 
-c41invert convert -input .\input_folder\ -output .\output_folder\
+``c41invert convert -input .\input_folder\ -output .\output_folder\``
 
 Output files are always written as TIFF 
 
