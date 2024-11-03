@@ -64,6 +64,7 @@ type convertCmd struct {
 	lowlights, highlights float64
 	scurve                bool
 	outputFormat          string
+	centerMetering        bool
 }
 
 func (*convertCmd) Name() string {
@@ -94,6 +95,7 @@ func (c *convertCmd) SetFlags(f *flag.FlagSet) {
 		"s-curve", false,
 		"Use sigmoid funciton instead of linear mapping")
 	f.StringVar(&c.outputFormat, "output-format", "tiff", "Output file format TIFF default, available options TIFF | JPEG ")
+	f.BoolVar(&c.centerMetering, "center-metering", false, "Use center metering instead of average to find the highlights and lowlights, useful when negative doesn't fill the image frame")
 }
 
 func (c *convertCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
@@ -126,7 +128,7 @@ func (c *convertCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 					load_err)
 			}
 
-			sampleArea := sampleBounds(c.sampleFraction, picture)
+			sampleArea := sampleBounds(c.sampleFraction, picture, c.centerMetering)
 			palette := samplePalette(picture, sampleArea)
 
 			t := Transformation{
@@ -172,20 +174,43 @@ func (c *convertCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 
 // sampleBounds gets a bounding box for a center fraction of the image, based
 // on parameter fraction
-func sampleBounds(fraction float64, picture image.Image) image.Rectangle {
+func sampleBounds(fraction float64, picture image.Image, centerMetering bool) image.Rectangle {
 	bounds := picture.Bounds()
 	width := bounds.Max.X - bounds.Min.X
 	height := bounds.Max.Y - bounds.Min.Y
 
+	// Check if center metering (square bounds) is requested
+	if centerMetering {
+		// Determine the shorter dimension
+		minDim := width
+		if height < width {
+			minDim = height
+		}
+
+		// Calculate the size of the square sample area based on fraction
+		squareSize := int(float64(minDim) * fraction)
+		borderWidth := (width - squareSize) / 2
+		borderHeight := (height - squareSize) / 2
+
+		// Define the square sample area, centered within the original bounds
+		return image.Rectangle{
+			Min: image.Point{bounds.Min.X + borderWidth, bounds.Min.Y + borderHeight},
+			Max: image.Point{bounds.Min.X + borderWidth + squareSize, bounds.Min.Y + borderHeight + squareSize},
+		}
+	}
+
+	// Default behavior: aspect-ratio-preserving sample bounds
 	border := (1 - fraction) / 2
-
-	sampleArea := image.Rectangle{
-		image.Point{bounds.Min.X + int(float64(width)*border),
-			bounds.Min.Y + int(float64(height)*border)},
-		image.Point{bounds.Max.X - int(float64(width)*border),
-			bounds.Max.Y - int(float64(height)*border)}}
-
-	return sampleArea
+	return image.Rectangle{
+		Min: image.Point{
+			X: bounds.Min.X + int(float64(width)*border),
+			Y: bounds.Min.Y + int(float64(height)*border),
+		},
+		Max: image.Point{
+			X: bounds.Max.X - int(float64(width)*border),
+			Y: bounds.Max.Y - int(float64(height)*border),
+		},
+	}
 }
 
 func main() {
