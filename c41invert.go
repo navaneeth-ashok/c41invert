@@ -95,7 +95,7 @@ func (c *convertCmd) SetFlags(f *flag.FlagSet) {
 		"s-curve", false,
 		"Use sigmoid funciton instead of linear mapping")
 	f.StringVar(&c.outputFormat, "output-format", "tiff", "Output file format TIFF default, available options TIFF | JPEG ")
-	f.BoolVar(&c.centerMetering, "center-metering", false, "Use center metering instead of average to find the highlights and lowlights, useful when negative doesn't fill the image frame")
+	f.BoolVar(&c.centerMetering, "center-weighted-metering", false, "Use center metering instead of average to find the highlights and lowlights, useful when negative doesn't fill the image frame")
 }
 
 func (c *convertCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {

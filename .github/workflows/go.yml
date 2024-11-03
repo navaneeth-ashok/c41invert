@@ -43,5 +43,5 @@ jobs:
       - name: Upload Executable
         uses: actions/upload-artifact@v3
         with:
-          name: filmconvert
-          path: filmconvert
+          name: c41invert
+          path: c41invert

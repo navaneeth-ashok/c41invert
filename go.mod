@@ -1,4 +1,4 @@
-module filmconvert
+module github.com/navaneeth-ashok/c41invert
 
 go 1.21
 
