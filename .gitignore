@@ -1,7 +1,11 @@
 *~
 c41map
 c41invert
+filmconvert
 c41histogram
 *.jpeg
+*.TIFF
+*.tiff
 *.png
 *.exe
+*.RAF
