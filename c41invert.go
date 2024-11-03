@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"golibraw"
 	"image"
 	"image/jpeg"
 	_ "image/png"
@@ -31,7 +30,7 @@ func load(filename string) (image.Image, error) {
 	for _, ext := range rawExtensions {
 		if strings.HasSuffix(strings.ToLower(filename), ext) {
 			// Decode using golibraw
-			img, err := golibraw.ImportRaw(filename)
+			img, err := ImportRaw(filename)
 			if err != nil {
 				return nil, err
 			}
