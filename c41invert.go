@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"flag"
+	"golibraw"
 	"image"
+	"image/jpeg"
+	_ "image/png"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-
-	_ "image/png"
 
 	"golang.org/x/image/tiff"
 
@@ -24,6 +25,20 @@ func load(filename string) (image.Image, error) {
 		return nil, oerr
 	}
 	defer f.Close()
+
+	log.Printf("Processing %s\n", filename)
+	rawExtensions := []string{".cr2", ".nef", ".raf", ".arw", ".dng"}
+	for _, ext := range rawExtensions {
+		if strings.HasSuffix(strings.ToLower(filename), ext) {
+			// Decode using golibraw
+			img, err := golibraw.ImportRaw(filename)
+			if err != nil {
+				return nil, err
+			}
+
+			return img, nil
+		}
+	}
 
 	p, _, derr := image.Decode(f)
 	if derr != nil {
@@ -44,13 +59,12 @@ func samplePalette(picture image.Image, sampleArea image.Rectangle) *Palette {
 }
 
 type convertCmd struct {
-	inputDir			  string
-	outputDir 			  string
-	infile                string
-	outfile               string
+	inputDir              string
+	outputDir             string
 	sampleFraction        float64
 	lowlights, highlights float64
 	scurve                bool
+	outputFormat          string
 }
 
 func (*convertCmd) Name() string {
@@ -80,11 +94,17 @@ func (c *convertCmd) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&c.scurve,
 		"s-curve", false,
 		"Use sigmoid funciton instead of linear mapping")
+	f.StringVar(&c.outputFormat, "output-format", "tiff", "Output file format TIFF default, available options TIFF | JPEG ")
 }
 
 func (c *convertCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if c.inputDir == "" || c.outputDir == "" {
 		log.Println("Please specify both input and output directories.")
+		return subcommands.ExitUsageError
+	}
+
+	if strings.ToLower(c.outputFormat) != "tiff" && strings.ToLower(c.outputFormat) != "jpeg" {
+		log.Println("Invalid format. Please use TIFF or JPEG.")
 		return subcommands.ExitUsageError
 	}
 
@@ -96,47 +116,48 @@ func (c *convertCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() && strings.HasSuffix(strings.ToLower(info.Name()), ".tif") {
-			outputFile := filepath.Join(c.outputDir, strings.TrimSuffix(info.Name(), filepath.Ext(info.Name()))+".tiff")
-			
+		if !info.IsDir() {
+			outputFile := filepath.Join(c.outputDir, strings.TrimSuffix(info.Name(), filepath.Ext(info.Name()))+"."+strings.ToLower(c.outputFormat))
+
 			picture, load_err := load(path)
-			
+
 			if load_err != nil {
 				log.Fatalf("Could not load input file `%s`: %v",
 					path,
 					load_err)
 			}
-		
+
 			sampleArea := sampleBounds(c.sampleFraction, picture)
 			palette := samplePalette(picture, sampleArea)
-		
+
 			t := Transformation{
 				Range{Low: palette.Red.Percentile(c.lowlights), High: palette.Red.Percentile(c.highlights)},
 				Range{Low: palette.Green.Percentile(c.lowlights), High: palette.Green.Percentile(c.highlights)},
 				Range{Low: palette.Blue.Percentile(c.lowlights), High: palette.Blue.Percentile(c.highlights)},
 				c.lowlights - c.highlights,
 			}
-		
+
 			mapping := t.Linear()
 			if c.scurve {
 				mapping = t.Sigmoid()
 			}
-		
+
 			copy := mapping.Apply(picture)
-		
+
 			of, ferr := os.Create(outputFile)
 			if ferr != nil {
 				log.Fatal(ferr)
 			}
 			defer of.Close()
-			// jpeg.Encode(of, copy, &jpeg.Options{Quality: 95})
-			tiff.Encode(of, copy, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
 
-			// if err := c.processFile(path, outputFile); err != nil {
-			// 	log.Printf("Failed to process file %s: %v\n", path, err)
-			// } else {
-			// 	log.Printf("Successfully processed and saved: %s\n", outputFile)
-			// }
+			if strings.ToLower(c.outputFormat) == "jpeg" {
+				jpeg.Encode(of, copy, &jpeg.Options{Quality: 95})
+			} else {
+				tiff.Encode(of, copy, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
+			}
+
+			log.Printf("Successfully processed and saved: %s\n", outputFile)
+
 		}
 		return nil
 	})
@@ -172,6 +193,7 @@ func main() {
 	subcommands.Register(&convertCmd{}, "")
 
 	flag.Parse()
+
 	ctx := context.Background()
 	os.Exit(int(subcommands.Execute(ctx)))
 }
