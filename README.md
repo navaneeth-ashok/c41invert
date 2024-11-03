@@ -1,7 +1,8 @@
 # c41invert
 
-This project is a fork and merge of couple of open source projects as well as my
-own personal modifications so that the app is suitable for my way of film scanning.
+This project is a fork and merge of couple of open source projects as well as my 
+own personal modifications to make it suitable for my style of film scanning.
+
 
 ## Projects referenced
 
