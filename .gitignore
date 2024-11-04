@@ -9,3 +9,5 @@ c41histogram
 *.png
 *.exe
 *.RAF
+input/*
+output/*
