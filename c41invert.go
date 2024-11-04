@@ -120,12 +120,12 @@ func (c *convertCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{
 		if !info.IsDir() {
 			outputFile := filepath.Join(c.outputDir, strings.TrimSuffix(info.Name(), filepath.Ext(info.Name()))+"."+strings.ToLower(c.outputFormat))
 
-			picture, load_err := load(path)
+			picture, loadErr := load(path)
 
-			if load_err != nil {
+			if loadErr != nil {
 				log.Fatalf("Could not load input file `%s`: %v",
 					path,
-					load_err)
+					loadErr)
 			}
 
 			sampleArea := sampleBounds(c.sampleFraction, picture, c.centerMetering)

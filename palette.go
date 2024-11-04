@@ -15,8 +15,8 @@ type Channel struct {
 
 // Add adds a colour value to the channel
 func (c *Channel) Add(val uint32) {
-	c.Shades[val] += 1
-	c.Total += 1
+	c.Shades[val]++
+	c.Total++
 	if val < c.Min {
 		c.Min = val
 	}
@@ -78,20 +78,24 @@ func (p *Palette) Add(c color.RGBA64) {
 	p.Red.Add(r)
 	p.Green.Add(g)
 	p.Blue.Add(b)
-	p.Total += 1
+	p.Total++
 }
 
+// Range to hold the lowlight and  highlight value of each color R,G,B
 type Range struct {
 	Low, High uint16
 }
 
+// Transformation to holds the Range value of RGB colors and contrast
 type Transformation struct {
 	Red, Green, Blue Range
 	Contrast         float64
 }
 
+// Mapping to hold the transformation type, linear | sigmoid
 type Mapping func(color.RGBA64) (out color.RGBA64)
 
+// Apply takes an input image and applies a mapping transformation to each pixel; either linear or sigmoid transformation
 func (m Mapping) Apply(input image.Image) image.Image {
 	bounds := input.Bounds()
 	copy := image.NewRGBA64(bounds)
@@ -107,6 +111,7 @@ func (m Mapping) Apply(input image.Image) image.Image {
 	return copy
 }
 
+// Sigmoid transformation on pixel values, commonly referred in photography as S curve
 func (t Transformation) Sigmoid() Mapping {
 	rmin, rmax := float64(t.Red.Low), float64(t.Red.High)
 	gmin, gmax := float64(t.Green.Low), float64(t.Green.High)
@@ -134,6 +139,7 @@ func (t Transformation) Sigmoid() Mapping {
 	}
 }
 
+// Linear transformation on pixel values, a regular color inversion
 func (t Transformation) Linear() Mapping {
 	rmin, rmax := float64(t.Red.Low), float64(t.Red.High)
 	gmin, gmax := float64(t.Green.Low), float64(t.Green.High)

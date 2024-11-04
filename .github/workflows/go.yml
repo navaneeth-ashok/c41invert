@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20"
+          go-version: "1.21"
 
       - name: Install libraw-dev
         run: sudo apt-get update && sudo apt-get install -y libraw-dev
@@ -34,7 +34,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v1.0.1
-          release_name: Release v1.0.1
+          release_name: Release v1.0.2
           body: |
             This release contains the latest build of the Go application.
         env:
