@@ -24,7 +24,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libraw-dev
 
       - name: Build
-        run: go build -v ./...
+        run: go build
 
       - name: Test
         run: go test -v ./...
@@ -33,10 +33,11 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v1.0.2
-          release_name: Release v1.0.2
+          tag_name: v1.0.3
+          release_name: Release v1.0.3
           body: |
             This release contains the latest build of the Go application.
+          files: ./c41invert    # Upload the binary as an asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
