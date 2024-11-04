@@ -29,20 +29,21 @@ jobs:
       - name: Test
         run: go test -v ./...
 
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
+      - name: Release
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.3
-          release_name: Release v1.0.3
           body: |
-            This release contains the latest build of the Go application.
-          files: ./c41invert    # Upload the binary as an asset
+            - Added center weighted sampling  
+            - TIFF output support
+            - Input takes directory instead of single file
+          files: ./c41invert
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Executable
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: c41invert
           path: c41invert
